@@ -173,18 +173,16 @@ result = MyProcessor_Background().process(q347.FatJet)
 print('GO')
 compute_q347 = dask.compute(result, scheduler=m.get)
 print('I finished :)')
-#with open('../outputs/1000to1400_ybtag_result.pkl', 'wb') as f:
-#   pickle.dump(compute_q1014, f)
 
 # bad_files = []
 # from ndcctools.taskvine import DaskVine
 # m = DaskVine([9123,9128], name="jupyter")
-# for i in range(0, 340):
+# for i in range(0, 349):
 #     q1014 = NanoEventsFactory.from_root(
-#         {'/project01/ndcms/cmoore24/qcd/1000to1400/' + q1014_files[i]: "/Events"},
+#         {'/project01/ndcms/cmoore24/qcd/300to470/' + q347_files[i]: "/Events"},
 #         permit_dask=True,
 #         schemaclass=PFNanoAODSchema,
-#         metadata={"dataset":"1000to1400"}
+#         metadata={"dataset":"300to470"}
 #     ).events()
 #     result = MyProcessor_Background().process(q1014.FatJet)
 #     print('GO')
@@ -194,10 +192,8 @@ print('I finished :)')
 #         print('done')
 #     except:
 #         print('bad')
-#         bad_files.append(q1014_files[i])
+#         bad_files.append(q347_files[i])
 #         continue
 #     if i % 20 == 0:
 #         print(i)
 # print(len(bad_files))
-# with open('bad_files.pkl', 'wb') as f:
-#     pickle.dump(bad_files, f)
