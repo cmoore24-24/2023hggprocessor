@@ -230,7 +230,7 @@ if __name__ == '__main__':
     
             btag = (
                 dhist.Hist.new
-                .Reg(40, -1, 1, name='Btag', label='Btag')
+                .Reg(40, 0, 1, name='Btag', label='Btag')
                 .Weight()
             )
             
@@ -326,7 +326,7 @@ if __name__ == '__main__':
     
             btag = (
                 dhist.Hist.new
-                .Reg(40, -1, 1, name='Btag', label='Btag')
+                .Reg(40, 0, 1, name='Btag', label='Btag')
                 .Weight()
             )
             
