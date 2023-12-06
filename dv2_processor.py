@@ -26,95 +26,42 @@ if __name__ == '__main__':
     warnings.filterwarnings("ignore", "Please ensure")
     warnings.filterwarnings("ignore", "The necessary")
 
-    hgg_files = os.listdir('/project01/ndcms/cmoore24/signal/hgg')
-    hbb_files = os.listdir('/project01/ndcms/cmoore24/signal/hbb')
-    q347_files = os.listdir('/project01/ndcms/cmoore24/qcd/300to470')
-    q476_files = os.listdir('/project01/ndcms/cmoore24/qcd/470to600')
-    q68_files = os.listdir('/project01/ndcms/cmoore24/qcd/600to800')
-    q810_files = os.listdir('/project01/ndcms/cmoore24/qcd/800to1000')
-    q1014_files = os.listdir('/project01/ndcms/cmoore24/qcd/1000to1400')
-    q1418_files = os.listdir('/project01/ndcms/cmoore24/qcd/1400to1800')
-    q1824_files = os.listdir('/project01/ndcms/cmoore24/qcd/1800to2400')
-    q2432_files = os.listdir('/project01/ndcms/cmoore24/qcd/2400to3200')
-    q32inf_files = os.listdir('/project01/ndcms/cmoore24/qcd/3200toInf')
-    
+    try:
+        with open("data_dv2.pkl", "rb") as fr:
+            datasets = pickle.load(fr)
+    except Exception as e:
+        print(f"Could not read data_dv2.pkl: {e}, reconstructing...")
+        datasets = {
+            "hgg": {"path": "signal/hgg", "label": "Hgg"},
+            "hbb": {"path": "signal/hbb", "label": "Hbb"},
+            "q347": {"path": "qcd/300to470", "label": "QCD_Pt_300to470"},
+            "q476": {"path": "qcd/470to600", "label": "QCD_Pt_470to600"},
+            "q68": {"path": "qcd/600to800", "label": "QCD_Pt_600to800"},
+            "q810": {"path": "qcd/800to1000", "label": "QCD_Pt_800to1000"},
+            "q1014": {"path": "qcd/1000to1400", "label": "QCD_Pt_1000to1400"},
+            "q1418": {"path": "qcd/1400to1800", "label": "QCD_Pt_1400to1800"},
+            "q1824": {"path": "qcd/1800to2400", "label": "QCD_Pt_1800to2400"},
+            "q2432": {"path": "qcd/2400to3200", "label": "QCD_Pt_2400to3200"},
+            "q32Inf": {"path": "qcd/3200toInf", "label": "QCD_Pt_3200toInf"},
+        }
 
-    hgg = NanoEventsFactory.from_root(
-        [{'/project01/ndcms/cmoore24/signal/hgg/' + fn: "/Events"} for fn in hgg_files],
-        permit_dask=True,
-        schemaclass=PFNanoAODSchema,
-        metadata={"dataset": "Hgg"},
-    ).events()
-    
-    hbb = NanoEventsFactory.from_root(
-        [{'/project01/ndcms/cmoore24/signal/hbb/' + fn: "/Events"} for fn in hbb_files],
-        permit_dask=True,
-        schemaclass=PFNanoAODSchema,
-        metadata={"dataset": "Hbb"},
-    ).events()
+        path_root = "/project01/ndcms/cmoore24"
+        for name, info in datasets.items():
+            info['files'] = os.listdir(f"{path_root}/{info['path']}")
 
-    q347 = NanoEventsFactory.from_root(
-        [{'/project01/ndcms/cmoore24/qcd/300to470/' + fn: "/Events"} for fn in q347_files],
-        permit_dask=True,
-        schemaclass=PFNanoAODSchema,
-        metadata={"dataset": "QCD_Pt_300to470"},
-    ).events()
-    
-    q476 = NanoEventsFactory.from_root(
-        [{'/project01/ndcms/cmoore24/qcd/470to600/' + fn: "/Events"} for fn in q476_files],
-        permit_dask=True,
-        schemaclass=PFNanoAODSchema,
-        metadata={"dataset": "QCD_Pt_470to600"},
-    ).events()
-    
-    q68 = NanoEventsFactory.from_root(
-        [{'/project01/ndcms/cmoore24/qcd/600to800/' + fn: "/Events"} for fn in q68_files],
-        permit_dask=True,
-        schemaclass=PFNanoAODSchema,
-        metadata={"dataset": "QCD_Pt_600to800"},
-    ).events()
-    
-    q810 = NanoEventsFactory.from_root(
-        [{'/project01/ndcms/cmoore24/qcd/800to1000/' + fn: "/Events"} for fn in q810_files],
-        permit_dask=True,
-        schemaclass=PFNanoAODSchema,
-        metadata={"dataset": "QCD_Pt_800to1000"},
-    ).events()
-    
-    q1014 = NanoEventsFactory.from_root(
-        [{'/project01/ndcms/cmoore24/qcd/1000to1400/' + fn: "/Events"} for fn in q1014_files],
-        permit_dask=True,
-        schemaclass=PFNanoAODSchema,
-        metadata={"dataset": "QCD_Pt_1000to1400"},
-    ).events()
-    
-    q1418 = NanoEventsFactory.from_root(
-        [{'/project01/ndcms/cmoore24/qcd/1400to1800/' + fn: "/Events"} for fn in q1418_files],
-        permit_dask=True,
-        schemaclass=PFNanoAODSchema,
-        metadata={"dataset": "QCD_Pt_1400to1800"},
-    ).events()
-    
-    q1824 = NanoEventsFactory.from_root(
-        [{'/project01/ndcms/cmoore24/qcd/1800to2400/' + fn: "/Events"} for fn in q1824_files],
-        permit_dask=True,
-        schemaclass=PFNanoAODSchema,
-        metadata={"dataset": "QCD_Pt_1800to2400"},
-    ).events()
-    
-    q2432 = NanoEventsFactory.from_root(
-        [{'/project01/ndcms/cmoore24/qcd/2400to3200/' + fn: "/Events"} for fn in q2432_files],
-        permit_dask=True,
-        schemaclass=PFNanoAODSchema,
-        metadata={"dataset": "QCD_Pt_2400to3200"},
-    ).events()
-    
-    q32Inf = NanoEventsFactory.from_root(
-        [{'/project01/ndcms/cmoore24/qcd/3200toInf/' + fn: "/Events"} for fn in q32inf_files],
-        permit_dask=True,
-        schemaclass=PFNanoAODSchema,
-        metadata={"dataset": "QCD_Pt_3200toInf"},
-    ).events()
+        with open("data_dv2.pkl", "wb") as fw:
+            pickle.dump(datasets, fw)
+
+    source = "/project01/ndcms/cmoore24"
+    events = {}
+    for name, info in datasets.items():
+        events[name] = hgg = NanoEventsFactory.from_root(
+            {f"{source}/{info['path']}/{fn}": "/Events" for fn in info["files"]},
+            permit_dask=True,
+            schemaclass=PFNanoAODSchema,
+            chunks_per_file=1,
+            metadata={"dataset": info["label"]},
+        ).events()
 
     def color_ring(fatjet):
         jetdef = fastjet.JetDefinition(fastjet.cambridge_algorithm, 0.8) # make this C/A at 0.8
@@ -360,27 +307,45 @@ if __name__ == '__main__':
 
     start = time.time()
     result = {}
-    result['Hgg'] = MyProcessor_Signal().process(hgg)
-    print('hbb')
-    result['Hbb'] = MyProcessor_Signal().process(hbb)
-    print('300')
-    result['QCD_Pt_300to470_TuneCP5_13TeV_pythia8'] = MyProcessor_Background().process(q347)
-    print('470')
-    result['QCD_Pt_470to600_TuneCP5_13TeV_pythia8'] = MyProcessor_Background().process(q476)
-    print('600')
-    result['QCD_Pt_600to800_TuneCP5_13TeV_pythia8'] = MyProcessor_Background().process(q68)
-    print('800')
-    result['QCD_Pt_800to1000_TuneCP5_13TeV_pythia8'] = MyProcessor_Background().process(q810)
-    print('1000')
-    result['QCD_Pt_1000to1400_TuneCP5_13TeV_pythia8'] = MyProcessor_Background().process(q1014)
-    print('1400')
-    result['QCD_Pt_1400to1800_TuneCP5_13TeV_pythia8'] = MyProcessor_Background().process(q1418)
-    print('1800')
-    result['QCD_Pt_1800to2400_TuneCP5_13TeV_pythia8'] = MyProcessor_Background().process(q1824)
-    print('2400')
-    result['QCD_Pt_2400to3200_TuneCP5_13TeV_pythia8'] = MyProcessor_Background().process(q2432)
-    print('3200')
-    result['QCD_Pt_3200toInf_TuneCP5_13TeV_pythia8'] = MyProcessor_Background().process(q32Inf)
+    result["Hgg"] = MyProcessor_Signal().process(events["hgg"])
+    print("hbb")
+    result["Hbb"] = MyProcessor_Signal().process(events["hbb"])
+    print("300")
+    result["QCD_Pt_300to470_TuneCP5_13TeV_pythia8"] = MyProcessor_Background().process(
+        events["q347"]
+    )
+    print("470")
+    result["QCD_Pt_470to600_TuneCP5_13TeV_pythia8"] = MyProcessor_Background().process(
+        events["q476"]
+    )
+    print("600")
+    result["QCD_Pt_600to800_TuneCP5_13TeV_pythia8"] = MyProcessor_Background().process(
+        events["q68"]
+    )
+    print("800")
+    result["QCD_Pt_800to1000_TuneCP5_13TeV_pythia8"] = MyProcessor_Background().process(
+        events["q810"]
+    )
+    print("1000")
+    result[
+        "QCD_Pt_1000to1400_TuneCP5_13TeV_pythia8"
+    ] = MyProcessor_Background().process(events["q1014"])
+    print("1400")
+    result[
+        "QCD_Pt_1400to1800_TuneCP5_13TeV_pythia8"
+    ] = MyProcessor_Background().process(events["q1418"])
+    print("1800")
+    result[
+        "QCD_Pt_1800to2400_TuneCP5_13TeV_pythia8"
+    ] = MyProcessor_Background().process(events["q1824"])
+    print("2400")
+    result[
+        "QCD_Pt_2400to3200_TuneCP5_13TeV_pythia8"
+    ] = MyProcessor_Background().process(events["q2432"])
+    print("3200")
+    result["QCD_Pt_3200toInf_TuneCP5_13TeV_pythia8"] = MyProcessor_Background().process(
+        events["q32Inf"]
+    )
     stop = time.time()
     print(stop-start)
 
