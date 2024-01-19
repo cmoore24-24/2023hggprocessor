@@ -21,6 +21,27 @@ if __name__ == "__main__":
         run_info_path=f"/project01/ndcms/{os.environ['USER']}/vine-run-info",
     )
 
+    available_functions = [
+        "Color_Ring",
+        "Color_Ring_Var",
+        "D2",
+        "D3",
+        "N4",
+        "U1",
+        "U2",
+        "U3",
+        "MRatio",
+        "N2",
+        "N3",
+        "nConstituents",
+        "Mass",
+        "SDmass",
+        "Btag",
+    ]
+
+    enabled_functions = set()
+    enabled_functions.add("Btag")
+
     warnings.filterwarnings("ignore", "Found duplicate branch")
     warnings.filterwarnings("ignore", "Missing cross-reference index for")
     warnings.filterwarnings("ignore", "dcut")
@@ -56,7 +77,7 @@ if __name__ == "__main__":
     source = "/project01/ndcms/cmoore24"
     events = {}
     for name, info in datasets.items():
-        events[name] = hgg = NanoEventsFactory.from_root(
+        events[name] = NanoEventsFactory.from_root(
             {f"{source}/{info['path']}/{fn}": "/Events" for fn in info["files"]},
             # permit_dask=True,
             schemaclass=PFNanoAODSchema,
@@ -176,6 +197,7 @@ if __name__ == "__main__":
 
         def process(self, events):
             dataset = events.metadata["dataset"]
+            computations = {"entries": ak.count(events.event, axis=None)}
 
             fatjet = events.FatJet
 
@@ -212,115 +234,141 @@ if __name__ == "__main__":
                 * boosted_fatjet.constituents.pf.puppiWeight
             )
 
-            # uf_cr = ak.unflatten(
-            #     color_ring(boosted_fatjet), counts=ak.num(boosted_fatjet)
-            # )
-            # boosted_fatjet["color_ring"] = uf_cr
-            # hcr = dhist.Hist.new.Reg(
-            #     100, 0.5, 4.5, name="color_ring", label="Color_Ring"
-            # ).Weight()
-            # fill_cr = ak.fill_none(ak.flatten(boosted_fatjet.color_ring), 0)
-            # hcr.fill(color_ring=fill_cr)
+            if "Color_Ring" in enabled_functions:
+                uf_cr = ak.unflatten(
+                    color_ring(boosted_fatjet), counts=ak.num(boosted_fatjet)
+                )
+                boosted_fatjet["color_ring"] = uf_cr
+                hcr = dhist.Hist.new.Reg(
+                    100, 0.5, 4.5, name="color_ring", label="Color_Ring"
+                ).Weight()
+                fill_cr = ak.fill_none(ak.flatten(boosted_fatjet.color_ring), 0)
+                hcr.fill(color_ring=fill_cr)
+                computations["Color_Ring"] = hcr
 
-            # uf_cr_var = ak.unflatten(
-            #     color_ring(boosted_fatjet, groomed=True), counts=ak.num(boosted_fatjet)
-            # )
-            # boosted_fatjet["color_ring_var"] = uf_cr_var
-            # hcr_var = dhist.Hist.new.Reg(
-            #     40, 0, 3, name="color_ring_var", label="Color_Ring_Var"
-            # ).Weight()
-            # fill_cr_var = ak.fill_none(ak.flatten(boosted_fatjet.color_ring_var), 0)
-            # hcr_var.fill(color_ring_var=fill_cr_var)
+            if "Color_Ring_Var" in enabled_functions:
+                uf_cr_var = ak.unflatten(
+                    color_ring(boosted_fatjet, variant=True),
+                    counts=ak.num(boosted_fatjet),
+                )
+                boosted_fatjet["color_ring_var"] = uf_cr_var
+                hcr_var = dhist.Hist.new.Reg(
+                    40, 0, 3, name="color_ring_var", label="Color_Ring_Var"
+                ).Weight()
+                fill_cr_var = ak.fill_none(ak.flatten(boosted_fatjet.color_ring_var), 0)
+                hcr_var.fill(color_ring_var=fill_cr_var)
+                computations["Color_Ring_Var"] = hcr_var
 
-            # d2 = ak.unflatten(d2_calc(boosted_fatjet), counts=ak.num(boosted_fatjet))
-            # boosted_fatjet["d2b1"] = d2
-            # d2b1 = dhist.Hist.new.Reg(40, 0, 3, name="D2B1", label="D2B1").Weight()
-            # d2b1.fill(D2B1=ak.flatten(boosted_fatjet.d2b1))
+            if "D2" in enabled_functions:
+                d2 = ak.unflatten(
+                    d2_calc(boosted_fatjet), counts=ak.num(boosted_fatjet)
+                )
+                boosted_fatjet["d2b1"] = d2
+                d2b1 = dhist.Hist.new.Reg(40, 0, 3, name="D2B1", label="D2B1").Weight()
+                d2b1.fill(D2B1=ak.flatten(boosted_fatjet.d2b1))
+                computations["D2"] = d2b1
 
-            # d3 = ak.unflatten(d3_calc(boosted_fatjet), counts=ak.num(boosted_fatjet))
-            # boosted_fatjet["d3b1"] = d3
-            # d3b1 = dhist.Hist.new.Reg(40, 0, 3, name="D3B1", label="D3B1").Weight()
-            # d3b1.fill(D3B1=ak.flatten(boosted_fatjet.d3b1))
+            if "D3" in enabled_functions:
+                d3 = ak.unflatten(
+                    d3_calc(boosted_fatjet), counts=ak.num(boosted_fatjet)
+                )
+                boosted_fatjet["d3b1"] = d3
+                d3b1 = dhist.Hist.new.Reg(40, 0, 3, name="D3B1", label="D3B1").Weight()
+                d3b1.fill(D3B1=ak.flatten(boosted_fatjet.d3b1))
+                computations["D3"] = d3b1
 
-            # n4 = ak.unflatten(n4_calc(boosted_fatjet), counts=ak.num(boosted_fatjet))
-            # boosted_fatjet["n4b1"] = n4
-            # n4b1 = dhist.Hist.new.Reg(40, 0, 35, name="N4B1", label="N4B1").Weight()
-            # n4b1.fill(N4B1=ak.flatten(boosted_fatjet.n4b1))
+            if "N4" in enabled_functions:
+                n4 = ak.unflatten(
+                    n4_calc(boosted_fatjet), counts=ak.num(boosted_fatjet)
+                )
+                boosted_fatjet["n4b1"] = n4
+                n4b1 = dhist.Hist.new.Reg(40, 0, 35, name="N4B1", label="N4B1").Weight()
+                n4b1.fill(N4B1=ak.flatten(boosted_fatjet.n4b1))
+                computations["N4"] = n4b1
 
-            # u1 = ak.unflatten(
-            #     u_calc(boosted_fatjet, n=1), counts=ak.num(boosted_fatjet)
-            # )
-            # boosted_fatjet["u1b1"] = u1
-            # u1b1 = dhist.Hist.new.Reg(40, 0, 0.3, name="U1B1", label="U1B1").Weight()
-            # u1b1.fill(U1B1=ak.flatten(boosted_fatjet.u1b1))
+            if "U1" in enabled_functions:
+                u1 = ak.unflatten(
+                    u_calc(boosted_fatjet, n=1), counts=ak.num(boosted_fatjet)
+                )
+                boosted_fatjet["u1b1"] = u1
+                u1b1 = dhist.Hist.new.Reg(
+                    40, 0, 0.3, name="U1B1", label="U1B1"
+                ).Weight()
+                u1b1.fill(U1B1=ak.flatten(boosted_fatjet.u1b1))
+                computations["U1"] = u1b1
 
-            # u2 = ak.unflatten(
-            #     u_calc(boosted_fatjet, n=2), counts=ak.num(boosted_fatjet)
-            # )
-            # boosted_fatjet["u2b1"] = u2
-            # u2b1 = dhist.Hist.new.Reg(40, 0, 0.05, name="U2B1", label="U2B1").Weight()
-            # u2b1.fill(U2B1=ak.flatten(boosted_fatjet.u2b1))
+            if "U2" in enabled_functions:
+                u2 = ak.unflatten(
+                    u_calc(boosted_fatjet, n=2), counts=ak.num(boosted_fatjet)
+                )
+                boosted_fatjet["u2b1"] = u2
+                u2b1 = dhist.Hist.new.Reg(
+                    40, 0, 0.05, name="U2B1", label="U2B1"
+                ).Weight()
+                u2b1.fill(U2B1=ak.flatten(boosted_fatjet.u2b1))
+                computations["U2"] = u2b1
 
-            # u3 = ak.unflatten(
-            #     u_calc(boosted_fatjet, n=3), counts=ak.num(boosted_fatjet)
-            # )
-            # boosted_fatjet["u3b1"] = u3
-            # u3b1 = dhist.Hist.new.Reg(40, 0, 0.05, name="U3B1", label="U3B1").Weight()
-            # u3b1.fill(U3B1=ak.flatten(boosted_fatjet.u3b1))
+            if "U3" in enabled_functions:
+                u3 = ak.unflatten(
+                    u_calc(boosted_fatjet, n=3), counts=ak.num(boosted_fatjet)
+                )
+                boosted_fatjet["u3b1"] = u3
+                u3b1 = dhist.Hist.new.Reg(
+                    40, 0, 0.05, name="U3B1", label="U3B1"
+                ).Weight()
+                u3b1.fill(U3B1=ak.flatten(boosted_fatjet.u3b1))
+                computations["U3"] = u3b1
 
-            # mass_ratio = boosted_fatjet.mass / boosted_fatjet.msoftdrop
-            # boosted_fatjet["mass_ratio"] = mass_ratio
-            # mosm = dhist.Hist.new.Reg(
-            #     40, 0.9, 1.5, name="MRatio", label="MRatio"
-            # ).Weight()
-            # mosm.fill(MRatio=ak.flatten(boosted_fatjet.mass_ratio))
+            if "MRatio" in enabled_functions:
+                mass_ratio = boosted_fatjet.mass / boosted_fatjet.msoftdrop
+                boosted_fatjet["mass_ratio"] = mass_ratio
+                mosm = dhist.Hist.new.Reg(
+                    40, 0.9, 1.5, name="MRatio", label="MRatio"
+                ).Weight()
+                mosm.fill(MRatio=ak.flatten(boosted_fatjet.mass_ratio))
+                computations["MRatio"] = mosm
 
-            # cmssw_n2 = dhist.Hist.new.Reg(
-            #     40, 0, 0.5, name="cmssw_n2", label="CMSSW_N2"
-            # ).Weight()
-            # cmssw_n2.fill(cmssw_n2=ak.flatten(boosted_fatjet.n2b1))
+            if "N2" in enabled_functions:
+                cmssw_n2 = dhist.Hist.new.Reg(
+                    40, 0, 0.5, name="cmssw_n2", label="CMSSW_N2"
+                ).Weight()
+                cmssw_n2.fill(cmssw_n2=ak.flatten(boosted_fatjet.n2b1))
+                computations["N2"] = cmssw_n2
 
-            # cmssw_n3 = dhist.Hist.new.Reg(
-            #     40, 0, 3, name="cmssw_n3", label="CMSSW_N3"
-            # ).Weight()
-            # cmssw_n3.fill(cmssw_n3=ak.flatten(boosted_fatjet.n3b1))
+            if "N3" in enabled_functions:
+                cmssw_n3 = dhist.Hist.new.Reg(
+                    40, 0, 3, name="cmssw_n3", label="CMSSW_N3"
+                ).Weight()
+                cmssw_n3.fill(cmssw_n3=ak.flatten(boosted_fatjet.n3b1))
+                computations["N3"] = cmssw_n3
 
-            # ncons = dhist.Hist.new.Reg(
-            #     40, 0, 200, name="constituents", label="nConstituents"
-            # ).Weight()
-            # ncons.fill(constituents=ak.flatten(boosted_fatjet.nConstituents))
+            if "nConstituents" in enabled_functions:
+                ncons = dhist.Hist.new.Reg(
+                    40, 0, 200, name="constituents", label="nConstituents"
+                ).Weight()
+                ncons.fill(constituents=ak.flatten(boosted_fatjet.nConstituents))
+                computations["nConstituents"] = ncons
 
-            # mass = dhist.Hist.new.Reg(40, 0, 250, name="mass", label="Mass").Weight()
-            # mass.fill(mass=ak.flatten(boosted_fatjet.mass))
+            if "Mass" in enabled_functions:
+                mass = dhist.Hist.new.Reg(
+                    40, 0, 250, name="mass", label="Mass"
+                ).Weight()
+                mass.fill(mass=ak.flatten(boosted_fatjet.mass))
+                computations["Mass"] = mass
 
-            # sdmass = dhist.Hist.new.Reg(
-            #     40, 0, 250, name="sdmass", label="SDmass"
-            # ).Weight()
-            # sdmass.fill(sdmass=ak.flatten(boosted_fatjet.msoftdrop))
+            if "SDmass" in enabled_functions:
+                sdmass = dhist.Hist.new.Reg(
+                    40, 0, 250, name="sdmass", label="SDmass"
+                ).Weight()
+                sdmass.fill(sdmass=ak.flatten(boosted_fatjet.msoftdrop))
+                computations["SDmass"] = sdmass
 
-            # btag = dhist.Hist.new.Reg(40, 0, 1, name="Btag", label="Btag").Weight()
-            # btag.fill(Btag=ak.flatten(boosted_fatjet.btagDDBvLV2))
+            if "Btag" in enabled_functions:
+                btag = dhist.Hist.new.Reg(40, 0, 1, name="Btag", label="Btag").Weight()
+                btag.fill(Btag=ak.flatten(boosted_fatjet.btagDDBvLV2))
+                computations["Btag"] = btag
 
-            return {
-                dataset: {
-                    "entries": ak.count(events.event, axis=None),
-                    # "Color_Ring": hcr,
-                    # "Color_Ring_Var": hcr_var,
-                    # "D2": d2b1,
-                    # "D3": d3b1,
-                    # "N4": n4b1,
-                    # "U1": u1b1,
-                    # "U2": u2b1,
-                    # "U3": u3b1,
-                    # "MRatio": mosm,
-                    # "N2": cmssw_n2,
-                    # "N3": cmssw_n3,
-                    # "nConstituents": ncons,
-                    # "Mass": mass,
-                    # "SDmass": sdmass,
-                    # "Btag": btag,
-                }
-            }
+            return {dataset: computations}
 
         def postprocess(self, accumulator):
             pass
