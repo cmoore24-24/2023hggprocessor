@@ -14,8 +14,12 @@ import time
 
 full_start = time.time()
 
-if __name__ == '__main__':
-    m = DaskVine([9123,9128], name="hgg", run_info_path='/project01/ndcms/cmoore24/vine-run-info')
+if __name__ == "__main__":
+    m = DaskVine(
+        [9123, 9128],
+        name=f"{os.environ['USER']}-hgg",
+        run_info_path=f"/project01/ndcms/{os.environ['USER']}/vine-run-info",
+    )
 
     warnings.filterwarnings("ignore", "Found duplicate branch")
     warnings.filterwarnings("ignore", "Missing cross-reference index for")
