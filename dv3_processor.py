@@ -1,4 +1,6 @@
 from coffea.nanoevents import NanoEventsFactory, PFNanoAODSchema
+from coffea.dataset_tools import preprocess, filter_files
+
 import fastjet
 import numpy as np
 import awkward as ak
@@ -9,16 +11,36 @@ import hist.dask as dhist
 import dask
 import pickle
 import os
+from collections import defaultdict
+import json
+from functools import partial
 from ndcctools.taskvine import DaskVine
 import time
 
 full_start = time.time()
 
 if __name__ == "__main__":
+    name = f"{os.environ['USER']}-hgg"
+    source_root = "/project01/ndcms/cmoore24"
+    preprocessed_path = "dataset_runable_preprocessed.json"
+
     m = DaskVine(
-        [9123, 9128],
-        name=f"{os.environ['USER']}-hgg",
+        [9123, 9129],
+        name=name,
         run_info_path=f"/project01/ndcms/{os.environ['USER']}/vine-run-info",
+    )
+
+    m.tune("temp-replica-count", 3)
+
+    scheduler = partial(
+        m.get,
+        resources={"cores": 1},
+        resources_mode=None,
+        lazy_transfers=True,
+        submit_per_cycle=1000,
+        # environment="hgg-coffea-latest.tar.gz",
+        # task_mode="function-calls",
+        # lib_resources={"cores": 12, "slots": 12},
     )
 
     available_functions = [
@@ -26,13 +48,13 @@ if __name__ == "__main__":
         "Color_Ring_Var",
         "D2",
         "D3",
-        "N4",
         "U1",
         "U2",
         "U3",
         "MRatio",
         "N2",
         "N3",
+        "N4",
         "nConstituents",
         "Mass",
         "SDmass",
@@ -40,7 +62,24 @@ if __name__ == "__main__":
     ]
 
     enabled_functions = set()
+
+    # enable all functions...
+    # enabled_functions = set(available_functions)
+
+    # or comment above, and enable particular ones by uncommenting below
     enabled_functions.add("Btag")
+
+    # enabled_functions.add("N4")
+    # enabled_functions.add("N2")
+    # enabled_functions.add("N3")
+
+    # enabled_functions.add("U1")
+    # enabled_functions.add("U2")
+    # enabled_functions.add("U3")
+    # enabled_functions.add("Color_Ring_Var")
+
+    # enabled_functions.add("D2")
+    # enabled_functions.add("D3")
 
     warnings.filterwarnings("ignore", "Found duplicate branch")
     warnings.filterwarnings("ignore", "Missing cross-reference index for")
@@ -67,21 +106,47 @@ if __name__ == "__main__":
             "q32Inf": {"path": "qcd/3200toInf", "label": "QCD_Pt_3200toInf"},
         }
 
-        path_root = "/project01/ndcms/cmoore24"
         for name, info in datasets.items():
-            info["files"] = os.listdir(f"{path_root}/{info['path']}")
+            info["files"] = os.listdir(f"{source_root}/{info['path']}")
 
         with open("data_dv2.pkl", "wb") as fw:
             pickle.dump(datasets, fw)
 
-    source = "/project01/ndcms/cmoore24"
+    try:
+        with open(preprocessed_path, "r") as fr:
+            dataset_runable = json.load(fr)
+    except (IOError, EOFError):
+        print("preprocessing")
+        fileset: dict = defaultdict(lambda: {})
+        dataset_runable = {}
+        dataset_updated = {}
+
+        for name, info in datasets.items():
+            fileset[name]["files"] = {}
+            fileset[name]["metadata"] = {}
+
+            for fn in info["files"]:
+                fname = f"{source_root}/{info['path']}/{fn}"
+                fileset[name]["files"][fname] = {"object_path": "/Events"}
+                fileset[name]["metadata"][fname] = {"dataset": info["label"]}
+
+        dataset_runable, dataset_updated = preprocess(
+            fileset,
+            align_clusters=False,
+            maybe_step_size=25_000,
+            files_per_batch=10,
+            save_form=True,
+            scheduler=scheduler,
+        )
+        dataset_runable = filter_files(dataset_runable)
+        with open(preprocessed_path, "w") as fr:
+            json.dump(dataset_runable, fr)
+
     events = {}
     for name, info in datasets.items():
         events[name] = NanoEventsFactory.from_root(
-            {f"{source}/{info['path']}/{fn}": "/Events" for fn in info["files"]},
-            # permit_dask=True,
+            dataset_runable[name]["files"],
             schemaclass=PFNanoAODSchema,
-            # uproot_options={"chunks_per_file":1},
             metadata={"dataset": info["label"]},
         ).events()
 
@@ -420,11 +485,10 @@ if __name__ == "__main__":
     print("computing")
     computed = dask.compute(
         result,
-        scheduler=m.get,
-        resources={"cores": 1},
-        resources_mode=None,
-        lazy_transfers=True,
+        scheduler=scheduler,
     )
+
+    os.makedirs("../outputs", exist_ok=True)
     with open("../outputs/color_ring_and_u1.pkl", "wb") as f:
         pickle.dump(computed, f)
 
